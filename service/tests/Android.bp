@@ -79,34 +79,3 @@ android_test {
         "mts-bluetooth",
     ],
 }
-
-cc_library_shared {
-    name: "libbluetooth_jni",
-    srcs: ["jni/**/*.cpp"],
-    header_libs: [
-        "jni_headers",
-        "libbluetooth_headers",
-    ],
-    include_dirs: [
-        "packages/modules/Bluetooth/system/types",
-    ],
-    shared_libs: [
-        "libbase",
-        "libchrome",
-        "liblog",
-        "libnativehelper",
-    ],
-    static_libs: [
-        "libbluetooth-types",
-    ],
-    cflags: [
-        "-Wall",
-        "-Werror",
-        "-Wextra",
-        "-Wno-unused-parameter",
-    ],
-    sanitize: {
-        scs: true,
-    },
-    min_sdk_version: "current",
-}
