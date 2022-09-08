@@ -142,7 +142,7 @@ android_app {
         "audio_set_scenarios_json",
         "bt_did.conf",
         "bt_stack.conf",
-        "privapp_allowlist_com.android.bluetooth.services.xml",
+        "privapp_allowlist_com.android.bluetooth.xml",
     ],
     apex_available: [
         "//apex_available:platform",
