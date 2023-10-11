@@ -100,7 +100,7 @@ jobject prepareCodecConfigObj(JNIEnv* env,
   jobject codecConfigObj =
       env->NewObject(android_bluetooth_BluetoothLeAudioCodecConfig.clazz,
                      android_bluetooth_BluetoothLeAudioCodecConfig.constructor,
-                     (jint)codecConfig.codec_type, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L);
+                     (jint)codecConfig.codec_type, 0, 0, 0, 0, 0, 0, 0, 0);
   return codecConfigObj;
 }
 
@@ -278,7 +278,7 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
   jclass jniBluetoothLeAudioCodecConfigClass =
       env->FindClass("android/bluetooth/BluetoothLeAudioCodecConfig");
   android_bluetooth_BluetoothLeAudioCodecConfig.constructor = env->GetMethodID(
-      jniBluetoothLeAudioCodecConfigClass, "<init>", "(IIIIIIIIILLLL)V");
+      jniBluetoothLeAudioCodecConfigClass, "<init>", "(IIIIIIIII)V");
   android_bluetooth_BluetoothLeAudioCodecConfig.getCodecType = env->GetMethodID(
       jniBluetoothLeAudioCodecConfigClass, "getCodecType", "()I");
 

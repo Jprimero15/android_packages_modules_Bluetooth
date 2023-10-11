@@ -4347,40 +4347,6 @@ public class AdapterService extends Service {
             return service.allowLowLatencyAudio(allowed, device);
         }
 
-        // Either implement these custom methods, or remove them from IBluetooth.
-        @Override
-        public void setBondingInitiatedLocally(BluetoothDevice device, boolean localInitiated,
-                AttributionSource source) {}
-
-        @Override
-        public boolean isTwsPlusDevice(BluetoothDevice device,
-                AttributionSource attributionSource) { return false; }
-
-        @Override
-        public String getTwsPlusPeerAddress(BluetoothDevice device,
-                AttributionSource attributionSource) { return null; }
-
-        @Override
-        public void updateQuietModeStatus(boolean quietMode,
-                AttributionSource attributionSource) {}
-
-        @Override
-        public int setSocketOpt(int type, int port, int optionName, byte [] optionVal,
-                int optionLen) { return -1; }
-
-        @Override
-        public int getSocketOpt(int type, int port, int optionName,
-                byte [] optionVal) { return -1; }
-
-        @Override
-        public int getDeviceType(BluetoothDevice device, AttributionSource source)
-                { return -1; }
-
-        @Override
-        public boolean isBroadcastActive(AttributionSource attributionSource) {
-            return false;
-        }
-
         @Override
         public void startRfcommListener(String name, ParcelUuid uuid, PendingIntent pendingIntent,
                 AttributionSource attributionSource, SynchronousResultReceiver receiver) {
@@ -4656,32 +4622,6 @@ public class AdapterService extends Service {
             }
             return BluetoothStatusCodes.SUCCESS;
         }
-        @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
-        @Override
-        public void getOffloadedTransportDiscoveryDataScanSupported(
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                receiver.send(getOffloadedTransportDiscoveryDataScanSupported(source));
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        private int getOffloadedTransportDiscoveryDataScanSupported(
-                AttributionSource attributionSource) {
-            AdapterService service = getService();
-            if (service == null
-                    || !callerIsSystemOrActiveOrManagedUser(service, TAG,
-                            "getOffloadedTransportDiscoveryDataScanSupported")
-                    || !Utils.checkScanPermissionForDataDelivery(
-                            service, attributionSource,
-                            "getOffloadedTransportDiscoveryDataScanSupported")) {
-                return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
-            }
-            enforceBluetoothPrivilegedPermission(service);
-
-            return service.getOffloadedTransportDiscoveryDataScanSupported();
-        }
 
         @Override
         public void registerBluetoothQualityReportReadyCallback(
@@ -4694,6 +4634,7 @@ public class AdapterService extends Service {
                 receiver.propagateException(e);
             }
         }
+
         @RequiresPermission(allOf = {
                 android.Manifest.permission.BLUETOOTH_CONNECT,
                 android.Manifest.permission.BLUETOOTH_PRIVILEGED,
@@ -4755,6 +4696,33 @@ public class AdapterService extends Service {
                 return BluetoothStatusCodes.ERROR_CALLBACK_NOT_REGISTERED;
             }
             return BluetoothStatusCodes.SUCCESS;
+        }
+
+        @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
+        @Override
+        public void getOffloadedTransportDiscoveryDataScanSupported(
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(getOffloadedTransportDiscoveryDataScanSupported(source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private int getOffloadedTransportDiscoveryDataScanSupported(
+                AttributionSource attributionSource) {
+            AdapterService service = getService();
+            if (service == null
+                    || !callerIsSystemOrActiveOrManagedUser(service, TAG,
+                            "getOffloadedTransportDiscoveryDataScanSupported")
+                    || !Utils.checkScanPermissionForDataDelivery(
+                            service, attributionSource,
+                            "getOffloadedTransportDiscoveryDataScanSupported")) {
+                return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
+            }
+            enforceBluetoothPrivilegedPermission(service);
+
+            return service.getOffloadedTransportDiscoveryDataScanSupported();
         }
     }
 

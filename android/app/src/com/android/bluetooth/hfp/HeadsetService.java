@@ -897,16 +897,6 @@ public class HeadsetService extends ProfileService {
                 receiver.propagateException(e);
             }
         }
-
-        @Override
-        public void phoneStateChangedDsDa(int numActive, int numHeld, int callState, String number,
-                                          int type, String name, AttributionSource source) {
-        }
-
-        @Override
-        public void clccResponseDsDa(int index, int direction, int status, int mode, boolean mpty,
-                                     String number, int type, AttributionSource source) {
-        }
     }
 
     // API methods

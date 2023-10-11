@@ -12,41 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- *
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted (subject to the limitations in the
- * disclaimer below) provided that the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following
- * disclaimer in the documentation and/or other materials provided
- * with the distribution.
- *
- * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
- * contributors may be used to endorse or promote products derived
- * from this software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
- * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
- * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
- * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
- * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
- *
  */
 
 #define LOG_TAG "BtGatt.JNI"
@@ -625,11 +590,7 @@ void btgattc_subrate_change_cb(int conn_id, uint16_t subrate_factor,
                                uint16_t timeout, uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid()) return;
-  if (!mCallbacksObj) {
-    ALOGE("mCallbacksObj is NULL. Return.");
-    return;
-  }
+  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
 
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onClientSubrateChange,
                                conn_id, subrate_factor, latency, cont_num,
@@ -884,11 +845,7 @@ void btgatts_subrate_change_cb(int conn_id, uint16_t subrate_factor,
                                uint16_t timeout, uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid()) return;
-  if (!mCallbacksObj) {
-    ALOGE("mCallbacksObj is NULL. Return.");
-    return;
-  }
+  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
 
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onServerSubrateChange,
                                conn_id, subrate_factor, latency, cont_num,
@@ -1695,15 +1652,8 @@ static void gattSetScanParametersNative(JNIEnv* env, jobject object,
                                         jint client_if, jint scan_interval_unit,
                                         jint scan_window_unit) {
   if (!sGattIf) return;
-
-  ALOGW("gattSetScanParametersNative");
-  std::vector<uint32_t> scan_interval = {0,0};
-  std::vector<uint32_t> scan_window = {0,0};
-  scan_interval.push_back(scan_interval_unit);
-  scan_window.push_back(scan_window_unit);
-
   sGattIf->scanner->SetScanParameters(
-      client_if, scan_interval, scan_window,
+      client_if, scan_interval_unit, scan_window_unit,
       base::Bind(&set_scan_params_cmpl_cb, client_if));
 }
 
@@ -2433,7 +2383,6 @@ static void startAdvertisingSetNative(
   std::vector<uint8_t> scan_resp_vec(scan_resp_data,
                                      scan_resp_data + scan_resp_len);
   env->ReleaseByteArrayElements(scan_resp, scan_resp_data, JNI_ABORT);
-  std::vector<uint8_t> scan_resp_enc_vec;
 
   AdvertiseParameters params = parseParams(env, parameters);
   PeriodicAdvertisingParameters periodicParams =
@@ -2443,21 +2392,17 @@ static void startAdvertisingSetNative(
   uint16_t adv_data_len = (uint16_t)env->GetArrayLength(adv_data);
   std::vector<uint8_t> data_vec(adv_data_data, adv_data_data + adv_data_len);
   env->ReleaseByteArrayElements(adv_data, adv_data_data, JNI_ABORT);
-  std::vector<uint8_t> data_enc_vec;
 
   jbyte* periodic_data_data = env->GetByteArrayElements(periodic_data, NULL);
   uint16_t periodic_data_len = (uint16_t)env->GetArrayLength(periodic_data);
   std::vector<uint8_t> periodic_data_vec(
       periodic_data_data, periodic_data_data + periodic_data_len);
   env->ReleaseByteArrayElements(periodic_data, periodic_data_data, JNI_ABORT);
-  std::vector<uint8_t> periodic_data_enc_vec;
-  std::vector<uint8_t> enc_key_value;
 
   sGattIf->advertiser->StartAdvertisingSet(
-      reg_id, base::Bind(&ble_advertising_set_started_cb, reg_id), params,
-      data_vec, data_enc_vec, scan_resp_vec, scan_resp_enc_vec, periodicParams,
-      periodic_data_vec, periodic_data_enc_vec, duration, maxExtAdvEvents,
-      enc_key_value, base::Bind(ble_advertising_set_timeout_cb));
+      reg_id, base::Bind(&ble_advertising_set_started_cb, reg_id, server_if),
+      params, data_vec, scan_resp_vec, periodicParams, periodic_data_vec,
+      duration, maxExtAdvEvents, base::Bind(ble_advertising_set_timeout_cb));
 }
 
 static void stopAdvertisingSetNative(JNIEnv* env, jobject object,
@@ -2521,9 +2466,8 @@ static void setAdvertisingDataNative(JNIEnv* env, jobject object,
                                      jint advertiser_id, jbyteArray data) {
   if (!sGattIf) return;
 
-  std::vector<uint8_t> data_enc;
   sGattIf->advertiser->SetData(
-      advertiser_id, false, toVector(env, data), data_enc,
+      advertiser_id, false, toVector(env, data),
       base::Bind(&callJniCallback, method_onAdvertisingDataSet, advertiser_id));
 }
 
@@ -2531,9 +2475,8 @@ static void setScanResponseDataNative(JNIEnv* env, jobject object,
                                       jint advertiser_id, jbyteArray data) {
   if (!sGattIf) return;
 
-  std::vector<uint8_t> data_enc;
   sGattIf->advertiser->SetData(
-      advertiser_id, true, toVector(env, data), data_enc,
+      advertiser_id, true, toVector(env, data),
       base::Bind(&callJniCallback, method_onScanResponseDataSet,
                  advertiser_id));
 }
@@ -2577,9 +2520,8 @@ static void setPeriodicAdvertisingDataNative(JNIEnv* env, jobject object,
                                              jbyteArray data) {
   if (!sGattIf) return;
 
-  std::vector<uint8_t> data_enc;
   sGattIf->advertiser->SetPeriodicAdvertisingData(
-      advertiser_id, toVector(env, data), data_enc,
+      advertiser_id, toVector(env, data),
       base::Bind(&callJniCallback, method_onPeriodicAdvertisingDataSet,
                  advertiser_id));
 }
